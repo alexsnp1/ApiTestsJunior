@@ -92,11 +92,26 @@ public class ChangingTheNameTest {
                 .statusCode(HttpStatus.SC_OK)
                 .body("message", equalTo("Profile updated successfully"))
                 .body("customer.name", equalTo(name));
+
+        given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/profile")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_OK)
+                .body("name", equalTo(name));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"JohnSmith", "a", "", " ", "John Smith2", "John Smith?"})
     public void userCannotRenameThemselvesUsingIncorrectName(String name) {
+        String oldName = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/profile")
+                .then()
+                .extract()
+                .path("name");
+
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
@@ -111,10 +126,25 @@ public class ChangingTheNameTest {
                 .assertThat()
                 .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .body(Matchers.equalTo("Name must contain two words with letters only"));
+
+        given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/profile")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_OK)
+                .body("name", equalTo(oldName));
     }
 
     @Test
     public void userCannotRenameThemselvesUsingNullName() {
+        String oldName = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/profile")
+                .then()
+                .extract()
+                .path("name");
+
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
@@ -128,5 +158,13 @@ public class ChangingTheNameTest {
                 .then()
                 .assertThat()
                 .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/profile")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_OK)
+                .body("name", equalTo(oldName));
     }
 }

@@ -109,16 +109,11 @@ public class DepositingFundsTest {
     @ParameterizedTest
     @ValueSource(doubles = {0.01, 4999.99, 5000})
     public void userCanDepositFunds(double balance) {
-        int TransactionsCountBeforeDeposit = given()
+        double oldBalance = given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/accounts/4/transactions")
+                .get("http://localhost:4111/api/v1/customer/accounts")
                 .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_OK)
-                .extract()
-                .jsonPath()
-                .getList("$")
-                .size();
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
@@ -133,17 +128,12 @@ public class DepositingFundsTest {
                 .then()
                 .assertThat()
                 .statusCode(HttpStatus.SC_OK);
-        int TransactionsCountAfterDeposit = given()
+        double newBalance = given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/accounts/4/transactions")
+                .get("http://localhost:4111/api/v1/customer/accounts")
                 .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_OK)
-                .extract()
-                .jsonPath()
-                .getList("$")
-                .size();
-        assertEquals(TransactionsCountBeforeDeposit + 1, TransactionsCountAfterDeposit);
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+        assertEquals(oldBalance + balance, newBalance, 0.01);
     }
 
     @ParameterizedTest
@@ -154,6 +144,11 @@ public class DepositingFundsTest {
             "5000.01, 'Deposit amount cannot exceed 5000'",
     })
     public void userCannotDepositIncorrectAmountOfFunds(double balance, String error) {
+        double oldBalance = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
@@ -169,6 +164,12 @@ public class DepositingFundsTest {
                 .assertThat()
                 .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .body(Matchers.equalTo(error));
+        double newBalance = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+        assertEquals(oldBalance, newBalance, 0.01);
     }
 
     @ParameterizedTest
@@ -189,6 +190,5 @@ public class DepositingFundsTest {
                 .assertThat()
                 .statusCode(HttpStatus.SC_FORBIDDEN)
                 .body(Matchers.equalTo("Unauthorized access to account"));
-        ;
     }
 }

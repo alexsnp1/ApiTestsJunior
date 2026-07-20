@@ -108,26 +108,16 @@ public class TransferringFundsTest {
     @ParameterizedTest
     @ValueSource(doubles = {0.01, 9999.99, 10000})
     public void userCanTransferFundsToThemselves(double amount) {
-        int TransactionsCountBeforeTransferAcc1 = given()
+        double oldBalanceSender = given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/accounts/4/transactions")
+                .get("http://localhost:4111/api/v1/customer/accounts")
                 .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_OK)
-                .extract()
-                .jsonPath()
-                .getList("$")
-                .size();
-        int TransactionsCountBeforeTransferAcc2 = given()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+        double oldBalanceReceiver = given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/accounts/5/transactions")
+                .get("http://localhost:4111/api/v1/customer/accounts")
                 .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_OK)
-                .extract()
-                .jsonPath()
-                .getList("$")
-                .size();
+                .extract().jsonPath().getDouble("find { it.id == 5 }.balance");
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
@@ -143,52 +133,32 @@ public class TransferringFundsTest {
                 .then()
                 .assertThat()
                 .statusCode(HttpStatus.SC_OK);
-        int TransactionsCountAfterTransferAcc1 = given()
+        double newBalanceSender = given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/accounts/4/transactions")
+                .get("http://localhost:4111/api/v1/customer/accounts")
                 .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_OK)
-                .extract()
-                .jsonPath()
-                .getList("$")
-                .size();
-        int TransactionsCountAfterTransferAcc2 = given()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+        double newBalanceReceiver = given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/accounts/5/transactions")
+                .get("http://localhost:4111/api/v1/customer/accounts")
                 .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_OK)
-                .extract()
-                .jsonPath()
-                .getList("$")
-                .size();
-        assertEquals(TransactionsCountBeforeTransferAcc1 + 1, TransactionsCountAfterTransferAcc1);
-        assertEquals(TransactionsCountBeforeTransferAcc2 + 1, TransactionsCountAfterTransferAcc2);
+                .extract().jsonPath().getDouble("find { it.id == 5 }.balance");
+        assertEquals(oldBalanceSender, newBalanceSender + amount, 0.03);
+        assertEquals(oldBalanceReceiver, newBalanceReceiver - amount, 0.03);
     }
 
     @Test
     public void userCanTransferFundsToAnotherUser() {
-        int TransactionsCountBeforeTransferAcc1 = given()
+        double oldBalanceSender = given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/accounts/4/transactions")
+                .get("http://localhost:4111/api/v1/customer/accounts")
                 .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_OK)
-                .extract()
-                .jsonPath()
-                .getList("$")
-                .size();
-        int TransactionsCountBeforeTransferAcc2 = given()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+        double oldBalanceReceiver = given()
                 .header("Authorization", "Basic dXNlcjUxMjpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/accounts/6/transactions")
+                .get("http://localhost:4111/api/v1/customer/accounts")
                 .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_OK)
-                .extract()
-                .jsonPath()
-                .getList("$")
-                .size();
+                .extract().jsonPath().getDouble("find { it.id == 6 }.balance");
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
@@ -204,32 +174,27 @@ public class TransferringFundsTest {
                 .then()
                 .assertThat()
                 .statusCode(HttpStatus.SC_OK);
-        int TransactionsCountAfterTransferAcc1 = given()
+        double newBalanceSender = given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/accounts/4/transactions")
+                .get("http://localhost:4111/api/v1/customer/accounts")
                 .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_OK)
-                .extract()
-                .jsonPath()
-                .getList("$")
-                .size();
-        int TransactionsCountAfterTransferAcc2 = given()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+        double newBalanceReceiver = given()
                 .header("Authorization", "Basic dXNlcjUxMjpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/accounts/6/transactions")
+                .get("http://localhost:4111/api/v1/customer/accounts")
                 .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_OK)
-                .extract()
-                .jsonPath()
-                .getList("$")
-                .size();
-        assertEquals(TransactionsCountBeforeTransferAcc1 + 1, TransactionsCountAfterTransferAcc1);
-        assertEquals(TransactionsCountBeforeTransferAcc2 + 1, TransactionsCountAfterTransferAcc2);
+                .extract().jsonPath().getDouble("find { it.id == 6 }.balance");
+        assertEquals(oldBalanceSender, newBalanceSender + 100.00, 0.03);
+        assertEquals(oldBalanceReceiver, newBalanceReceiver - 100.00, 0.03);
     }
 
     @Test
     public void userCannotTransferFundsToNonExistentAccount() {
+        double oldBalance = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
@@ -246,10 +211,26 @@ public class TransferringFundsTest {
                 .assertThat()
                 .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .body(Matchers.equalTo("Invalid transfer: insufficient funds or invalid accounts"));
+        double newBalance = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+        assertEquals(oldBalance, newBalance, 0.01);
     }
 
     @Test
     public void userCannotTransferFundsIfBalanceIsInsufficient() {
+        double oldBalanceSender = given()
+                .header("Authorization", "Basic dXNlcjUxMjpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 6 }.balance");
+        double oldBalanceReceiver = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
@@ -266,6 +247,18 @@ public class TransferringFundsTest {
                 .assertThat()
                 .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .body(Matchers.equalTo("Invalid transfer: insufficient funds or invalid accounts"));
+        double newBalanceSender = given()
+                .header("Authorization", "Basic dXNlcjUxMjpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 6 }.balance");
+        double newBalanceReceiver = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+        assertEquals(oldBalanceSender, newBalanceSender, 0.03);
+        assertEquals(oldBalanceReceiver, newBalanceReceiver, 0.03);
     }
 
     @ParameterizedTest
@@ -276,6 +269,16 @@ public class TransferringFundsTest {
             "10000.01, 'Transfer amount cannot exceed 10000'",
     })
     public void userCannotTransferIncorrectAmountOfFunds(double amount, String error) {
+        double oldBalanceSender = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+        double oldBalanceReceiver = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 5 }.balance");
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
@@ -292,6 +295,17 @@ public class TransferringFundsTest {
                 .assertThat()
                 .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .body(Matchers.equalTo(error));
+        double newBalanceSender = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+        double newBalanceReceiver = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/accounts")
+                .then()
+                .extract().jsonPath().getDouble("find { it.id == 5 }.balance");
+        assertEquals(oldBalanceSender, newBalanceSender, 0.03);
+        assertEquals(oldBalanceReceiver, newBalanceReceiver, 0.03);
     }
-
 }
