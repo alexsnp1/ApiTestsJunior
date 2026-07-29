@@ -9,16 +9,14 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.Matchers.equalTo;
 
-public class DepositingFundsTest {
-
+public class ChangingTheNameTest {
     @BeforeAll
     public static void setUp() {
         RestAssured.filters(List.of(new RequestLoggingFilter(), new ResponseLoggingFilter()));
@@ -26,7 +24,7 @@ public class DepositingFundsTest {
 
     @Test
     public void userMustStartPreconditions() {
-        //login by Admin to get token
+        //login by Admin
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
@@ -74,121 +72,99 @@ public class DepositingFundsTest {
                 .then()
                 .assertThat()
                 .statusCode(HttpStatus.SC_CREATED);
-        //create account 1 by user511
-        //id : 4
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .post("http://localhost:4111/api/v1/accounts")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_CREATED);
-        //create account 2 by user511
-        //id : 5
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .post("http://localhost:4111/api/v1/accounts")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_CREATED);
-        //create account 1 by user512
-        //id : 6
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", "Basic dXNlcjUxMjpVc2VyMTIzNCM=")
-                .post("http://localhost:4111/api/v1/accounts")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.SC_CREATED);
     }
 
     @ParameterizedTest
-    @ValueSource(doubles = {0.01, 4999.99, 5000})
-    public void userCanDepositFunds(double balance) {
-        double oldBalance = given()
-                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/customer/accounts")
-                .then()
-                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+    @ValueSource(strings = {"John Smith", "a A"})
+    public void userCanRenameThemselves(String name) {
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
                 .body(String.format("""
                         {
-                          "id": 4,
-                          "balance": %f
+                        "name" : "%s"
                         }
-                        """, balance))
-                .post("http://localhost:4111/api/v1/accounts/deposit")
+                        """, name))
+                .put("http://localhost:4111/api/v1/customer/profile")
                 .then()
                 .assertThat()
-                .statusCode(HttpStatus.SC_OK);
-        double newBalance = given()
+                .statusCode(HttpStatus.SC_OK)
+                .body("message", equalTo("Profile updated successfully"))
+                .body("customer.name", equalTo(name));
+
+        given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/customer/accounts")
+                .get("http://localhost:4111/api/v1/customer/profile")
                 .then()
-                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
-        assertEquals(oldBalance + balance, newBalance, 0.01);
+                .assertThat()
+                .statusCode(HttpStatus.SC_OK)
+                .body("name", equalTo(name));
     }
 
     @ParameterizedTest
-    @CsvSource({
-            "-0.01, 'Deposit amount must be at least 0.01'",
-            "0, 'Deposit amount must be at least 0.01'",
-            "0.001, 'Deposit amount must be at least 0.01'",
-            "5000.01, 'Deposit amount cannot exceed 5000'",
-    })
-    public void userCannotDepositIncorrectAmountOfFunds(double balance, String error) {
-        double oldBalance = given()
+    @ValueSource(strings = {"JohnSmith", "a", "", " ", "John Smith2", "John Smith?"})
+    public void userCannotRenameThemselvesUsingIncorrectName(String name) {
+        String oldName = given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/customer/accounts")
+                .get("http://localhost:4111/api/v1/customer/profile")
                 .then()
-                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
+                .extract()
+                .path("name");
+
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
                 .body(String.format("""
                         {
-                          "id": 4,
-                          "balance": %f
+                        "name" : "%s"
                         }
-                        """, balance))
-                .post("http://localhost:4111/api/v1/accounts/deposit")
+                        """, name))
+                .put("http://localhost:4111/api/v1/customer/profile")
                 .then()
                 .assertThat()
                 .statusCode(HttpStatus.SC_BAD_REQUEST)
-                .body(Matchers.equalTo(error));
-        double newBalance = given()
+                .body(Matchers.equalTo("Name must contain two words with letters only"));
+
+        given()
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .get("http://localhost:4111/api/v1/customer/accounts")
+                .get("http://localhost:4111/api/v1/customer/profile")
                 .then()
-                .extract().jsonPath().getDouble("find { it.id == 4 }.balance");
-        assertEquals(oldBalance, newBalance, 0.01);
+                .assertThat()
+                .statusCode(HttpStatus.SC_OK)
+                .body("name", equalTo(oldName));
     }
 
-    @ParameterizedTest
-    @ValueSource(ints = {6, 7})
-    public void userCannotDepositFundsToUnfamiliarNeitherNonExistentAccount(int id) {
+    @Test
+    public void userCannotRenameThemselvesUsingNullName() {
+        String oldName = given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/profile")
+                .then()
+                .extract()
+                .path("name");
+
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
                 .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
-                .body(String.format("""
+                .body(("""
                         {
-                          "id": %d,
-                          "balance": 100
+                        "name" : null
                         }
-                        """, id))
-                .post("http://localhost:4111/api/v1/accounts/deposit")
+                        """))
+                .put("http://localhost:4111/api/v1/customer/profile")
                 .then()
                 .assertThat()
-                .statusCode(HttpStatus.SC_FORBIDDEN)
-                .body(Matchers.equalTo("Unauthorized access to account"));
+                .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        given()
+                .header("Authorization", "Basic dXNlcjUxMTpVc2VyMTIzNCM=")
+                .get("http://localhost:4111/api/v1/customer/profile")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.SC_OK)
+                .body("name", equalTo(oldName));
     }
 }
