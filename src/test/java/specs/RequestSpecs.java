@@ -5,6 +5,7 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import utils.Headers;
 
 import java.util.List;
 
@@ -26,13 +27,13 @@ public class RequestSpecs {
 
     public static RequestSpecification adminAuthSpec() {
         return defaultRequestBuilder()
-                .addHeader("Authorization", "Basic YWRtaW46YWRtaW4=")
+                .addHeader(Headers.AUTHORIZATION, "Basic YWRtaW46YWRtaW4=")
                 .build();
     }
 
     public static RequestSpecification userAuthSpec(String token) {
         return defaultRequestBuilder()
-                .addHeader("Authorization", token)
+                .addHeader(Headers.AUTHORIZATION, token)
                 .build();
     }
 

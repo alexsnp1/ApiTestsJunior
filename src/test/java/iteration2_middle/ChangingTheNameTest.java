@@ -1,5 +1,6 @@
 package iteration2_middle;
 
+import utils.Headers;
 import utils.RandomData;
 import models.*;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,7 +43,7 @@ public class ChangingTheNameTest {
                 ResponseSpecs.returnsOK())
                 .execute(userLoginRequest)
                 .extract()
-                .header("Authorization");
+                .header(Headers.AUTHORIZATION);
 
     }
 
@@ -52,10 +53,9 @@ public class ChangingTheNameTest {
         CustomerProfileUpdateRequest customerProfileUpdateRequest = CustomerProfileUpdateRequest
                 .builder().name(name).build();
         CustomerProfileUpdateResponse customerProfileUpdateResponse = new CustomerProfileUpdateRequester(RequestSpecs.userAuthSpec(userAuthHeader),
-                ResponseSpecs.returnsOK())
+                ResponseSpecs.profileUpdatedSuccessfully())
                 .execute(customerProfileUpdateRequest)
                 .extract().as(CustomerProfileUpdateResponse.class);
-        assertEquals("Profile updated successfully", customerProfileUpdateResponse.getMessage());
         assertEquals(customerProfileUpdateResponse.getCustomer().getName(), name);
 
         CustomerProfileGetResponse customerProfileGetResponse = new CustomerProfileGetRequester(
@@ -77,12 +77,11 @@ public class ChangingTheNameTest {
 
         CustomerProfileUpdateRequest customerProfileUpdateRequest = CustomerProfileUpdateRequest
                 .builder().name(name).build();
-        String response = new CustomerProfileUpdateRequester(RequestSpecs.userAuthSpec(userAuthHeader),
-                ResponseSpecs.returnsBadRequest())
+        new CustomerProfileUpdateRequester(RequestSpecs.userAuthSpec(userAuthHeader),
+                ResponseSpecs.invalidNameError())
                 .execute(customerProfileUpdateRequest)
                 .extract()
                 .asString();
-        assertEquals("Name must contain two words with letters only", response);
 
         CustomerProfileGetResponse customerProfileGetResponseNew = new CustomerProfileGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader),

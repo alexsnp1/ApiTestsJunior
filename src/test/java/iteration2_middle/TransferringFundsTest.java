@@ -1,5 +1,6 @@
 package iteration2_middle;
 
+import utils.Headers;
 import utils.RandomData;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
@@ -55,7 +56,7 @@ public class TransferringFundsTest {
                 ResponseSpecs.returnsOK())
                 .execute(userLoginRequest1)
                 .extract()
-                .header("Authorization");
+                .header(Headers.AUTHORIZATION);
 
         //create and get id acc 1 user 1
         UserCreateAccountResponse response1User1 = new UserCreateAccountRequester(
@@ -100,7 +101,7 @@ public class TransferringFundsTest {
                 ResponseSpecs.returnsOK())
                 .execute(userLoginRequest2)
                 .extract()
-                .header("Authorization");
+                .header(Headers.AUTHORIZATION);
 
         //create and get id acc 1 user 2
         UserCreateAccountResponse response1User2 = new UserCreateAccountRequester(
@@ -134,13 +135,12 @@ public class TransferringFundsTest {
     @ParameterizedTest
     @ValueSource(doubles = {0.01, 9999.99, 10000})
     public void userCanTransferFundsToThemselves(double amount) {
-        List<CustomerAccountsGetResponse> accountsOld = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsOld = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
 
         TransferFundsRequest transferFundsRequest = TransferFundsRequest.builder()
                 .senderAccountId(id1User1).receiverAccountId(id2User1).amount(amount).build();
@@ -149,13 +149,12 @@ public class TransferringFundsTest {
                 , ResponseSpecs.returnsOK())
                 .execute(transferFundsRequest);
 
-        List<CustomerAccountsGetResponse> accountsNew = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsNew = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
         assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance(),
                 TestUtils.findAccountById(accountsNew, id1User1).getBalance() + amount, 0.03);
         assertEquals(TestUtils.findAccountById(accountsOld, id2User1).getBalance(),
@@ -164,20 +163,18 @@ public class TransferringFundsTest {
 
     @Test
     public void userCanTransferFundsToAnotherUser() {
-        List<CustomerAccountsGetResponse> accountsOldUser1 = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsOldUser1 = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
-        List<CustomerAccountsGetResponse> accountsOldUser2 = new CustomerAccountsGetRequester(
+                .as(CustomerAccountsGetResponse[].class);
+        CustomerAccountsGetResponse[] accountsOldUser2 = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader2),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
 
         TransferFundsRequest transferFundsRequest = TransferFundsRequest.builder()
                 .senderAccountId(id1User1).receiverAccountId(id1User2).amount(100).build();
@@ -186,20 +183,18 @@ public class TransferringFundsTest {
                 , ResponseSpecs.returnsOK())
                 .execute(transferFundsRequest);
 
-        List<CustomerAccountsGetResponse> accountsNewUser1 = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsNewUser1 = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
-        List<CustomerAccountsGetResponse> accountsNewUser2 = new CustomerAccountsGetRequester(
+                .as(CustomerAccountsGetResponse[].class);
+        CustomerAccountsGetResponse[] accountsNewUser2 = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader2),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
         assertEquals(TestUtils.findAccountById(accountsOldUser1, id1User1).getBalance(),
                 TestUtils.findAccountById(accountsNewUser1, id1User1).getBalance() + 100, 0.03);
         assertEquals(TestUtils.findAccountById(accountsOldUser2, id1User2).getBalance(),
@@ -208,29 +203,26 @@ public class TransferringFundsTest {
 
     @Test
     public void userCannotTransferFundsToNonExistentAccount() {
-        List<CustomerAccountsGetResponse> accountsOldUser1 = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsOldUser1 = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
 
         TransferFundsRequest transferFundsRequest = TransferFundsRequest.builder()
                 .senderAccountId(id1User1).receiverAccountId(127421412).amount(100).build();
 
         new TransferFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1)
-                , ResponseSpecs.returnsBadRequest())
-                .execute(transferFundsRequest)
-                .body(Matchers.equalTo("Invalid transfer: insufficient funds or invalid accounts"));
+                , ResponseSpecs.invalidTransfer())
+                .execute(transferFundsRequest);
 
-        List<CustomerAccountsGetResponse> accountsNewUser1 = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsNewUser1 = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
 
         assertEquals(TestUtils.findAccountById(accountsOldUser1, id1User1).getBalance(),
                 TestUtils.findAccountById(accountsNewUser1, id1User1).getBalance(), 0.03);
@@ -238,26 +230,23 @@ public class TransferringFundsTest {
 
     @Test
     public void userCannotTransferFundsIfBalanceIsInsufficient() {
-        List<CustomerAccountsGetResponse> accountsOld = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsOld = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
         TransferFundsRequest transferFundsRequest = TransferFundsRequest.builder()
                 .senderAccountId(id2User1).receiverAccountId(id1User1).amount(10000).build();
         new TransferFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1)
-                , ResponseSpecs.returnsBadRequest())
-                .execute(transferFundsRequest)
-                .body(Matchers.equalTo("Invalid transfer: insufficient funds or invalid accounts"));
-        List<CustomerAccountsGetResponse> accountsNew = new CustomerAccountsGetRequester(
+                , ResponseSpecs.invalidTransfer())
+                .execute(transferFundsRequest);
+        CustomerAccountsGetResponse[] accountsNew = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
         assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance(),
                 TestUtils.findAccountById(accountsNew, id1User1).getBalance(), 0.03);
         assertEquals(TestUtils.findAccountById(accountsOld, id2User1).getBalance(),
@@ -272,13 +261,12 @@ public class TransferringFundsTest {
             "10000.01, 'Transfer amount cannot exceed 10000'",
     })
     public void userCannotTransferIncorrectAmountOfFunds(double amount, String error) {
-        List<CustomerAccountsGetResponse> accountsOld = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsOld = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
 
         TransferFundsRequest transferFundsRequest = TransferFundsRequest.builder()
                 .senderAccountId(id1User1).receiverAccountId(id2User1).amount(amount).build();
@@ -288,13 +276,12 @@ public class TransferringFundsTest {
                 .execute(transferFundsRequest)
                 .body(Matchers.equalTo(error));
 
-        List<CustomerAccountsGetResponse> accountsNew = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsNew = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
         assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance(),
                 TestUtils.findAccountById(accountsNew, id1User1).getBalance(), 0.03);
         assertEquals(TestUtils.findAccountById(accountsOld, id2User1).getBalance(),

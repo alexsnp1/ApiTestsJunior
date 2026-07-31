@@ -1,5 +1,6 @@
 package iteration2_middle;
 
+import utils.Headers;
 import utils.RandomData;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
@@ -51,7 +52,7 @@ public class DepositingFundsTest {
                 ResponseSpecs.returnsOK())
                 .execute(userLoginRequest1)
                 .extract()
-                .header("Authorization");
+                .header(Headers.AUTHORIZATION);
 
         //create and get id acc 1 user 1
         UserCreateAccountResponse response2User1 = new UserCreateAccountRequester(
@@ -66,13 +67,12 @@ public class DepositingFundsTest {
     @ParameterizedTest
     @ValueSource(doubles = {0.01, 4999.99, 5000})
     public void userCanDepositFunds(double balance) {
-        List<CustomerAccountsGetResponse> accountsOld = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsOld = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
 
         DepositFundsRequest depositFundsRequest = DepositFundsRequest.builder()
                 .id(id1User1).balance(balance).build();
@@ -80,13 +80,12 @@ public class DepositingFundsTest {
                 ResponseSpecs.returnsOK())
                 .execute(depositFundsRequest);
 
-        List<CustomerAccountsGetResponse> accountsNew = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsNew = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
+                .as(CustomerAccountsGetResponse[].class);
         assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance() + balance,
                 TestUtils.findAccountById(accountsNew, id1User1).getBalance(), 0.01);
     }
@@ -99,14 +98,12 @@ public class DepositingFundsTest {
             "5000.01, 'Deposit amount cannot exceed 5000'",
     })
     public void userCannotDepositIncorrectAmountOfFunds(double balance, String error) {
-        List<CustomerAccountsGetResponse> accountsOld = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsOld = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
-
+                .as(CustomerAccountsGetResponse[].class);
         DepositFundsRequest depositFundsRequest = DepositFundsRequest.builder()
                 .id(id1User1).balance(balance).build();
         new DepositFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1),
@@ -114,14 +111,13 @@ public class DepositingFundsTest {
                 .execute(depositFundsRequest)
                 .body(Matchers.equalTo(error));
 
-        List<CustomerAccountsGetResponse> accountsNew = new CustomerAccountsGetRequester(
+        CustomerAccountsGetResponse[] accountsNew = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract()
-                .jsonPath()
-                .getList("", CustomerAccountsGetResponse.class);
-        assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance(),
+                .as(CustomerAccountsGetResponse[].class);
+        assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance() + balance,
                 TestUtils.findAccountById(accountsNew, id1User1).getBalance(), 0.01);
     }
 
@@ -131,8 +127,7 @@ public class DepositingFundsTest {
         DepositFundsRequest depositFundsRequest = DepositFundsRequest.builder()
                 .id(id).balance(100).build();
         new DepositFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1),
-                ResponseSpecs.returnsForbidden())
-                .execute(depositFundsRequest)
-                .body(Matchers.equalTo("Unauthorized access to account"));
+                ResponseSpecs.unauthorizedAccountAccess())
+                .execute(depositFundsRequest);
     }
 }

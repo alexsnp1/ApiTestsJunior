@@ -4,6 +4,8 @@ import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.specification.ResponseSpecification;
 import org.apache.http.HttpStatus;
 
+import static org.hamcrest.Matchers.equalTo;
+
 public class ResponseSpecs {
     private ResponseSpecs() {
     }
@@ -23,10 +25,28 @@ public class ResponseSpecs {
                 .expectStatusCode(HttpStatus.SC_OK)
                 .build();
     }
+    public static ResponseSpecification profileUpdatedSuccessfully() {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_OK)
+                .expectBody("message", equalTo("Profile updated successfully"))
+                .build();
+    }
 
+    public static ResponseSpecification invalidNameError() {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
+                .expectBody(equalTo("Name must contain two words with letters only"))
+                .build();
+    }
     public static ResponseSpecification returnsBadRequest() {
         return defaultResponseBuilder()
                 .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
+                .build();
+    }
+    public static ResponseSpecification invalidTransfer() {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
+                .expectBody(equalTo("Invalid transfer: insufficient funds or invalid accounts"))
                 .build();
     }
 
@@ -36,9 +56,10 @@ public class ResponseSpecs {
                 .build();
     }
 
-    public static ResponseSpecification returnsForbidden() {
+    public static ResponseSpecification unauthorizedAccountAccess() {
         return defaultResponseBuilder()
                 .expectStatusCode(HttpStatus.SC_FORBIDDEN)
+                .expectBody(equalTo("Unauthorized access to account"))
                 .build();
     }
 
