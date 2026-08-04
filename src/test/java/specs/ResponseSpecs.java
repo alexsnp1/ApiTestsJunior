@@ -25,6 +25,12 @@ public class ResponseSpecs {
                 .expectStatusCode(HttpStatus.SC_OK)
                 .build();
     }
+    public static ResponseSpecification transferSuccessful() {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_OK)
+                .expectBody("message", equalTo("Transfer successful"))
+                .build();
+    }
     public static ResponseSpecification profileUpdatedSuccessfully() {
         return defaultResponseBuilder()
                 .expectStatusCode(HttpStatus.SC_OK)

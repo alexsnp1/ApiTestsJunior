@@ -1,5 +1,6 @@
 package iteration2_middle;
 
+import org.junit.jupiter.api.Test;
 import utils.Headers;
 import utils.RandomData;
 import io.restassured.RestAssured;
@@ -22,7 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DepositingFundsTest {
     private static String userAuthHeader1;
+    private static String userAuthHeader2;
     private static int id1User1;
+    private static int id1User2;
 
     @BeforeAll
     public static void setUp() {
@@ -62,6 +65,41 @@ public class DepositingFundsTest {
                 .extract()
                 .as(UserCreateAccountResponse.class);
         id1User1 = response2User1.getId();
+        ///USER 2
+        //Create user2 by admin
+        AdminCreateUserRequest credentials2 = AdminCreateUserRequest.builder()
+                .username(RandomData.getUsername())
+                .password(RandomData.getPassword())
+                .build();
+        AdminCreateUserRequest userRequest2 = AdminCreateUserRequest.builder()
+                .username(credentials2.getUsername())
+                .password(credentials2.getPassword())
+                .role(UserRole.USER.toString())
+                .build();
+        new AdminCreateUserRequester(
+                RequestSpecs.adminAuthSpec(),
+                ResponseSpecs.returnsCreated())
+                .execute(userRequest2);
+        //get user2 token
+        UserLoginRequest userLoginRequest2 = UserLoginRequest.builder()
+                .username(credentials2.getUsername())
+                .password(credentials2.getPassword())
+                .build();
+
+        userAuthHeader2 = new UserLoginRequester(RequestSpecs.unAuthSpec(),
+                ResponseSpecs.returnsOK())
+                .execute(userLoginRequest2)
+                .extract()
+                .header(Headers.AUTHORIZATION);
+
+        //create and get id acc 1 user 2
+        UserCreateAccountResponse response1User2 = new UserCreateAccountRequester(
+                RequestSpecs.userAuthSpec(userAuthHeader2),
+                ResponseSpecs.returnsCreated())
+                .execute()
+                .extract()
+                .as(UserCreateAccountResponse.class);
+        id1User2 = response1User2.getId();
     }
 
     @ParameterizedTest
@@ -117,13 +155,35 @@ public class DepositingFundsTest {
                 .execute()
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
-        assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance() + balance,
+        assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance(),
                 TestUtils.findAccountById(accountsNew, id1User1).getBalance(), 0.01);
     }
+    @Test
+    public void userCannotDepositFundsToUnfamiliarAccount() {
+        CustomerAccountsGetResponse[] accountsOld = new CustomerAccountsGetRequester(
+                RequestSpecs.userAuthSpec(userAuthHeader2),
+                ResponseSpecs.returnsOK())
+                .execute()
+                .extract()
+                .as(CustomerAccountsGetResponse[].class);
+        DepositFundsRequest depositFundsRequest = DepositFundsRequest.builder()
+                .id(id1User2).balance(100).build();
+        new DepositFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1),
+                ResponseSpecs.unauthorizedAccountAccess())
+                .execute(depositFundsRequest);
+        CustomerAccountsGetResponse[] accountsNew = new CustomerAccountsGetRequester(
+                RequestSpecs.userAuthSpec(userAuthHeader2),
+                ResponseSpecs.returnsOK())
+                .execute()
+                .extract()
+                .as(CustomerAccountsGetResponse[].class);
+        assertEquals(TestUtils.findAccountById(accountsOld, id1User2).getBalance(),
+                TestUtils.findAccountById(accountsNew, id1User2).getBalance(), 0.01);
 
+    }
     @ParameterizedTest
-    @ValueSource(ints = {321316, 71254125})
-    public void userCannotDepositFundsToUnfamiliarNeitherNonExistentAccount(int id) {
+    @ValueSource(ints = {321321316, 71254125})
+    public void userCannotDepositFundsToNonExistentAccount(int id) {
         DepositFundsRequest depositFundsRequest = DepositFundsRequest.builder()
                 .id(id).balance(100).build();
         new DepositFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1),

@@ -146,7 +146,7 @@ public class TransferringFundsTest {
                 .senderAccountId(id1User1).receiverAccountId(id2User1).amount(amount).build();
 
         new TransferFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1)
-                , ResponseSpecs.returnsOK())
+                , ResponseSpecs.transferSuccessful())
                 .execute(transferFundsRequest);
 
         CustomerAccountsGetResponse[] accountsNew = new CustomerAccountsGetRequester(
@@ -180,7 +180,7 @@ public class TransferringFundsTest {
                 .senderAccountId(id1User1).receiverAccountId(id1User2).amount(100).build();
 
         new TransferFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1)
-                , ResponseSpecs.returnsOK())
+                , ResponseSpecs.transferSuccessful())
                 .execute(transferFundsRequest);
 
         CustomerAccountsGetResponse[] accountsNewUser1 = new CustomerAccountsGetRequester(
