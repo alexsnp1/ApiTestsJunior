@@ -3,7 +3,7 @@ package iteration2_senior.tests;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
-import iteration2_middle.utils.RandomData;
+import iteration2_senior.utils.RandomData;
 import iteration2_senior.models.*;
 import iteration2_senior.requests.skeleton.requesters.CrudRequester;
 import iteration2_senior.requests.skeleton.requesters.Endpoint;
