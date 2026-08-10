@@ -3,6 +3,7 @@ package iteration2_senior.tests;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
+import iteration2_middle.utils.RandomData;
 import iteration2_senior.models.*;
 import iteration2_senior.requests.skeleton.requesters.CrudRequester;
 import iteration2_senior.requests.skeleton.requesters.Endpoint;
@@ -27,6 +28,11 @@ public class TransferringFundsTest {
     private static int user1Id1;
     private static int user1Id2;
     private static int user2Id1;
+    private static final double INITIAL_DEPOSIT = 5000;
+    private static final double MAX_TRANSFER = 10000;
+    private static final double MONEY_ASSERT_DELTA = 0.03;
+    private static final double TRANSFER_AMOUNT = RandomData.getRandomTransferAmount();
+    private static final int NON_EXISTENT_ACCOUNT_ID = RandomData.getRandomNonExistentId();
 
     @BeforeAll
     public static void setUp() {
@@ -45,11 +51,11 @@ public class TransferringFundsTest {
         user2Id1 = response1User2.getId();
 
         //deposit to acc1 user 1
-        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, 5000);
-        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, 5000);
-        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, 5000);
-        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, 5000);
-        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, 5000);
+        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, INITIAL_DEPOSIT);
+        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, INITIAL_DEPOSIT);
+        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, INITIAL_DEPOSIT);
+        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, INITIAL_DEPOSIT);
+        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, INITIAL_DEPOSIT);
     }
 
     @ParameterizedTest
@@ -70,9 +76,9 @@ public class TransferringFundsTest {
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser1);
 
         assertEquals(TestUtils.findAccountById(accountsOld, user1Id1).getBalance(),
-                TestUtils.findAccountById(accountsNew, user1Id1).getBalance() + amount, 0.03);
+                TestUtils.findAccountById(accountsNew, user1Id1).getBalance() + amount, MONEY_ASSERT_DELTA);
         assertEquals(TestUtils.findAccountById(accountsOld, user1Id2).getBalance(),
-                TestUtils.findAccountById(accountsNew, user1Id2).getBalance() - amount, 0.03);
+                TestUtils.findAccountById(accountsNew, user1Id2).getBalance() - amount, MONEY_ASSERT_DELTA);
     }
 
     @Test
@@ -83,7 +89,7 @@ public class TransferringFundsTest {
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser2);
 
         TransferFundsRequest transferFundsRequest = TransferFundsRequest.builder()
-                .senderAccountId(user1Id1).receiverAccountId(user2Id1).amount(100).build();
+                .senderAccountId(user1Id1).receiverAccountId(user2Id1).amount(TRANSFER_AMOUNT).build();
 
         new CrudRequester(RequestSpecs.userAuthSpec(authTokenUser1),
                 Endpoint.ACCOUNTS_TRANSFER,
@@ -95,9 +101,9 @@ public class TransferringFundsTest {
         CustomerAccountsGetResponse[] accountsNewUser2 =
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser2);
         assertEquals(TestUtils.findAccountById(accountsOldUser1, user1Id1).getBalance(),
-                TestUtils.findAccountById(accountsNewUser1, user1Id1).getBalance() + 100, 0.03);
+                TestUtils.findAccountById(accountsNewUser1, user1Id1).getBalance() + TRANSFER_AMOUNT, MONEY_ASSERT_DELTA);
         assertEquals(TestUtils.findAccountById(accountsOldUser2, user2Id1).getBalance(),
-                TestUtils.findAccountById(accountsNewUser2, user2Id1).getBalance() - 100, 0.03);
+                TestUtils.findAccountById(accountsNewUser2, user2Id1).getBalance() - TRANSFER_AMOUNT, MONEY_ASSERT_DELTA);
     }
 
     @Test
@@ -106,7 +112,7 @@ public class TransferringFundsTest {
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser1);
 
         TransferFundsRequest transferFundsRequest = TransferFundsRequest.builder()
-                .senderAccountId(user1Id1).receiverAccountId(127421412).amount(100).build();
+                .senderAccountId(user1Id1).receiverAccountId(NON_EXISTENT_ACCOUNT_ID).amount(TRANSFER_AMOUNT).build();
 
         new CrudRequester(RequestSpecs.userAuthSpec(authTokenUser1),
                 Endpoint.ACCOUNTS_TRANSFER,
@@ -116,7 +122,7 @@ public class TransferringFundsTest {
         CustomerAccountsGetResponse[] accountsNewUser1 =
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser1);
         assertEquals(TestUtils.findAccountById(accountsOldUser1, user1Id1).getBalance(),
-                TestUtils.findAccountById(accountsNewUser1, user1Id1).getBalance(), 0.03);
+                TestUtils.findAccountById(accountsNewUser1, user1Id1).getBalance(), MONEY_ASSERT_DELTA);
     }
 
     @Test
@@ -127,7 +133,7 @@ public class TransferringFundsTest {
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser1);
 
         TransferFundsRequest transferFundsRequest = TransferFundsRequest.builder()
-                .senderAccountId(emptyAccount.getId()).receiverAccountId(user1Id1).amount(10000).build();
+                .senderAccountId(emptyAccount.getId()).receiverAccountId(user1Id1).amount(MAX_TRANSFER).build();
 
         new CrudRequester(RequestSpecs.userAuthSpec(authTokenUser1),
                 Endpoint.ACCOUNTS_TRANSFER,
@@ -137,9 +143,9 @@ public class TransferringFundsTest {
         CustomerAccountsGetResponse[] accountsNew =
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser1);
         assertEquals(TestUtils.findAccountById(accountsOld, user1Id1).getBalance(),
-                TestUtils.findAccountById(accountsNew, user1Id1).getBalance(), 0.03);
+                TestUtils.findAccountById(accountsNew, user1Id1).getBalance(), MONEY_ASSERT_DELTA);
         assertEquals(TestUtils.findAccountById(accountsOld, emptyAccount.getId()).getBalance(),
-                TestUtils.findAccountById(accountsNew, emptyAccount.getId()).getBalance(), 0.03);
+                TestUtils.findAccountById(accountsNew, emptyAccount.getId()).getBalance(), MONEY_ASSERT_DELTA);
     }
 
     @ParameterizedTest
@@ -165,8 +171,8 @@ public class TransferringFundsTest {
         CustomerAccountsGetResponse[] accountsNew =
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser1);
         assertEquals(TestUtils.findAccountById(accountsOld, user1Id1).getBalance(),
-                TestUtils.findAccountById(accountsNew, user1Id1).getBalance(), 0.03);
+                TestUtils.findAccountById(accountsNew, user1Id1).getBalance(), MONEY_ASSERT_DELTA);
         assertEquals(TestUtils.findAccountById(accountsOld, user1Id2).getBalance(),
-                TestUtils.findAccountById(accountsNew, user1Id2).getBalance(), 0.03);
+                TestUtils.findAccountById(accountsNew, user1Id2).getBalance(), MONEY_ASSERT_DELTA);
     }
 }

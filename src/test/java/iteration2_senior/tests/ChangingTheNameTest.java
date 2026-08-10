@@ -1,5 +1,6 @@
 package iteration2_senior.tests;
 
+import iteration2_middle.utils.RandomData;
 import iteration2_senior.models.*;
 import iteration2_senior.requests.skeleton.requesters.CrudRequester;
 import iteration2_senior.requests.skeleton.requesters.Endpoint;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ChangingTheNameTest {
     private static String authTokenUser;
+    private static final String validName = RandomData.getRandomValidName();
 
     @BeforeAll
     public static void setUp() {
@@ -25,21 +27,20 @@ public class ChangingTheNameTest {
         authTokenUser = AuthenticationStep.getUserTokenStep(user);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"John Smith", "a A"})
-    public void userCanRenameThemselves(String name) {
+    @Test
+    public void userCanRenameThemselves() {
         CustomerProfileUpdateRequest customerProfileUpdateRequest = CustomerProfileUpdateRequest
-                .builder().name(name).build();
+                .builder().name(validName).build();
 
         CustomerProfileUpdateResponse customerProfileUpdateResponse = new ValidatedCrudRequester<CustomerProfileUpdateResponse>(RequestSpecs.userAuthSpec(authTokenUser),
                 Endpoint.CUSTOMER_PROFILE_UPDATE,
                 ResponseSpecs.profileUpdatedSuccessfully())
                 .put(customerProfileUpdateRequest);
-        assertEquals(customerProfileUpdateResponse.getCustomer().getName(), name);
+        assertEquals(validName, customerProfileUpdateResponse.getCustomer().getName());
 
         CustomerProfileGetResponse customerProfileGetResponse =
                 CustomerProfileStep.getCustomerProfileResponse(authTokenUser);
-        assertEquals(customerProfileGetResponse.getName(), name);
+        assertEquals(validName, customerProfileGetResponse.getName());
     }
 
     @ParameterizedTest

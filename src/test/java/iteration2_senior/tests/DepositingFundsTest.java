@@ -3,6 +3,7 @@ package iteration2_senior.tests;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
+import iteration2_middle.utils.RandomData;
 import iteration2_senior.models.*;
 import iteration2_senior.requests.skeleton.requesters.CrudRequester;
 import iteration2_senior.requests.skeleton.requesters.Endpoint;
@@ -26,6 +27,9 @@ public class DepositingFundsTest {
     private static String authTokenUser2;
     private static int user1Id1;
     private static int user2Id1;
+    private static final double MONEY_ASSERT_DELTA = 0.01;
+    private static final double TRANSFER_AMOUNT = RandomData.getRandomTransferAmount();
+    private static final int NON_EXISTENT_ACCOUNT_ID = RandomData.getRandomNonExistentId();
 
     @BeforeAll
     public static void setUp() {
@@ -51,7 +55,7 @@ public class DepositingFundsTest {
 
         CustomerAccountsGetResponse[] accountsNew = CustomerAccountStep.getCustomerAccountResponse(authTokenUser1);
         assertEquals(TestUtils.findAccountById(accountsOld, user1Id1).getBalance() + balance,
-                TestUtils.findAccountById(accountsNew, user1Id1).getBalance(), 0.01);
+                TestUtils.findAccountById(accountsNew, user1Id1).getBalance(), MONEY_ASSERT_DELTA);
     }
 
     @ParameterizedTest
@@ -74,7 +78,7 @@ public class DepositingFundsTest {
 
         CustomerAccountsGetResponse[] accountsNew = CustomerAccountStep.getCustomerAccountResponse(authTokenUser1);
         assertEquals(TestUtils.findAccountById(accountsOld, user1Id1).getBalance(),
-                TestUtils.findAccountById(accountsNew, user1Id1).getBalance(), 0.01);
+                TestUtils.findAccountById(accountsNew, user1Id1).getBalance(), MONEY_ASSERT_DELTA);
     }
 
     @Test
@@ -82,7 +86,7 @@ public class DepositingFundsTest {
         CustomerAccountsGetResponse[] accountsOld = CustomerAccountStep.getCustomerAccountResponse(authTokenUser2);
 
         DepositFundsRequest depositFundsRequest = DepositFundsRequest.builder()
-                .id(user2Id1).balance(100).build();
+                .id(user2Id1).balance(TRANSFER_AMOUNT).build();
         new CrudRequester(RequestSpecs.userAuthSpec(authTokenUser1),
                 Endpoint.ACCOUNTS_DEPOSIT,
                 ResponseSpecs.unauthorizedAccountAccess())
@@ -90,15 +94,14 @@ public class DepositingFundsTest {
 
         CustomerAccountsGetResponse[] accountsNew = CustomerAccountStep.getCustomerAccountResponse(authTokenUser2);
         assertEquals(TestUtils.findAccountById(accountsOld, user2Id1).getBalance(),
-                TestUtils.findAccountById(accountsNew, user2Id1).getBalance(), 0.01);
+                TestUtils.findAccountById(accountsNew, user2Id1).getBalance(), MONEY_ASSERT_DELTA);
 
     }
 
-    @ParameterizedTest
-    @ValueSource(ints = {321321316, 71254125})
-    public void userCannotDepositFundsToNonExistentAccount(int id) {
+    @Test
+    public void userCannotDepositFundsToNonExistentAccount() {
         DepositFundsRequest depositFundsRequest = DepositFundsRequest.builder()
-                .id(id).balance(100).build();
+                .id(NON_EXISTENT_ACCOUNT_ID).balance(TRANSFER_AMOUNT).build();
         new CrudRequester(RequestSpecs.userAuthSpec(authTokenUser1),
                 Endpoint.ACCOUNTS_DEPOSIT,
                 ResponseSpecs.unauthorizedAccountAccess())

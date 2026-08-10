@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ChangingTheNameTest {
     private static String userAuthHeader;
+    private static final String validName = RandomData.getRandomValidName();
 
     @BeforeAll
     public static void setUp() {
@@ -51,23 +52,22 @@ public class ChangingTheNameTest {
 
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"John Smith", "a A"})
-    public void userCanRenameThemselves(String name) {
+    @Test
+    public void userCanRenameThemselves() {
         CustomerProfileUpdateRequest customerProfileUpdateRequest = CustomerProfileUpdateRequest
-                .builder().name(name).build();
+                .builder().name(validName).build();
         CustomerProfileUpdateResponse customerProfileUpdateResponse = new CustomerProfileUpdateRequester(RequestSpecs.userAuthSpec(userAuthHeader),
                 ResponseSpecs.profileUpdatedSuccessfully())
                 .execute(customerProfileUpdateRequest)
                 .extract().as(CustomerProfileUpdateResponse.class);
-        assertEquals(customerProfileUpdateResponse.getCustomer().getName(), name);
+        assertEquals(validName, customerProfileUpdateResponse.getCustomer().getName());
 
         CustomerProfileGetResponse customerProfileGetResponse = new CustomerProfileGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract().as(CustomerProfileGetResponse.class);
-        assertEquals(customerProfileGetResponse.getName(), name);
+        assertEquals(validName, customerProfileGetResponse.getName());
     }
 
     @ParameterizedTest
