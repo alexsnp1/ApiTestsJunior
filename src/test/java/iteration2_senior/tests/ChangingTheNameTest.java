@@ -15,9 +15,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import iteration2_senior.specs.RequestSpecs;
 import iteration2_senior.specs.ResponseSpecs;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-public class ChangingTheNameTest {
+public class ChangingTheNameTest extends BaseApiTest {
     private static String authTokenUser;
     private static final String validName = RandomData.getRandomValidName();
 
@@ -36,11 +34,11 @@ public class ChangingTheNameTest {
                 Endpoint.CUSTOMER_PROFILE_UPDATE,
                 ResponseSpecs.profileUpdatedSuccessfully())
                 .put(customerProfileUpdateRequest);
-        assertEquals(validName, customerProfileUpdateResponse.getCustomer().getName());
+        softly.assertThat(validName).isEqualTo(customerProfileUpdateResponse.getCustomer().getName());
 
         CustomerProfileGetResponse customerProfileGetResponse =
                 CustomerProfileStep.getCustomerProfileResponse(authTokenUser);
-        assertEquals(validName, customerProfileGetResponse.getName());
+        softly.assertThat(validName).isEqualTo(customerProfileGetResponse.getName());
     }
 
     @ParameterizedTest
@@ -60,7 +58,7 @@ public class ChangingTheNameTest {
 
         CustomerProfileGetResponse customerProfileGetResponseNew =
                 CustomerProfileStep.getCustomerProfileResponse(authTokenUser);
-        assertEquals(customerProfileGetResponseOld.getName(), customerProfileGetResponseNew.getName());
+        softly.assertThat(customerProfileGetResponseOld.getName()).isEqualTo(customerProfileGetResponseNew.getName());
     }
 
     @Test
@@ -77,6 +75,6 @@ public class ChangingTheNameTest {
 
         CustomerProfileGetResponse customerProfileGetResponseNew =
                 CustomerProfileStep.getCustomerProfileResponse(authTokenUser);
-        assertEquals(customerProfileGetResponseOld.getName(), customerProfileGetResponseNew.getName());
+        softly.assertThat(customerProfileGetResponseOld.getName()).isEqualTo(customerProfileGetResponseNew.getName());
     }
 }

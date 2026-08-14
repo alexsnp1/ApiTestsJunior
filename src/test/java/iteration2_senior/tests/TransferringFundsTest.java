@@ -22,14 +22,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TransferringFundsTest {
+public class TransferringFundsTest extends BaseApiTest{
     private static String authTokenUser1;
     private static String authTokenUser2;
     private static int user1Id1;
     private static int user1Id2;
     private static int user2Id1;
     private static final double INITIAL_DEPOSIT = 5000;
-    private static final double MAX_TRANSFER = 10000;
     private static final double MONEY_ASSERT_DELTA = 0.03;
     private static final double TRANSFER_AMOUNT = RandomData.getRandomTransferAmount();
     private static final int NON_EXISTENT_ACCOUNT_ID = RandomData.getRandomNonExistentId();
@@ -51,6 +50,7 @@ public class TransferringFundsTest {
         user2Id1 = response1User2.getId();
 
         //deposit to acc1 user 1
+        DepositFundsStep.depositFunds(authTokenUser1, user1Id1, INITIAL_DEPOSIT);
         DepositFundsStep.depositFunds(authTokenUser1, user1Id1, INITIAL_DEPOSIT);
         DepositFundsStep.depositFunds(authTokenUser1, user1Id1, INITIAL_DEPOSIT);
         DepositFundsStep.depositFunds(authTokenUser1, user1Id1, INITIAL_DEPOSIT);
@@ -133,7 +133,7 @@ public class TransferringFundsTest {
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser1);
 
         TransferFundsRequest transferFundsRequest = TransferFundsRequest.builder()
-                .senderAccountId(emptyAccount.getId()).receiverAccountId(user1Id1).amount(MAX_TRANSFER).build();
+                .senderAccountId(emptyAccount.getId()).receiverAccountId(user1Id1).amount(TRANSFER_AMOUNT).build();
 
         new CrudRequester(RequestSpecs.userAuthSpec(authTokenUser1),
                 Endpoint.ACCOUNTS_TRANSFER,

@@ -1,6 +1,6 @@
 package iteration2_senior.requests.steps;
 
-import iteration2_middle.utils.Headers;
+import iteration2_senior.utils.Headers;
 import iteration2_senior.models.AdminCreateUserRequest;
 import iteration2_senior.models.UserLoginRequest;
 import iteration2_senior.requests.skeleton.requesters.CrudRequester;

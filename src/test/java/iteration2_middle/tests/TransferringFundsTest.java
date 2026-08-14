@@ -19,16 +19,16 @@ import iteration2_middle.utils.TestUtils;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.offset;
 
-public class TransferringFundsTest {
+public class TransferringFundsTest extends BaseApiTest {
     private static String userAuthHeader1;
     private static String userAuthHeader2;
     private static int id1User1;
     private static int id2User1;
+    private static int id3User1;
     private static int id1User2;
     private static final double INITIAL_DEPOSIT = 5000;
-    private static final double MAX_TRANSFER = 10000;
     private static final double MONEY_ASSERT_DELTA = 0.03;
     private static final double TRANSFER_AMOUNT = RandomData.getRandomTransferAmount();
     private static final int NON_EXISTENT_ACCOUNT_ID = RandomData.getRandomNonExistentId();
@@ -136,6 +136,9 @@ public class TransferringFundsTest {
         new DepositFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
                 .execute(depositFundsRequest);
+        new DepositFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1),
+                ResponseSpecs.returnsOK())
+                .execute(depositFundsRequest);
     }
 
     @ParameterizedTest
@@ -161,10 +164,11 @@ public class TransferringFundsTest {
                 .execute()
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
-        assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance(),
-                TestUtils.findAccountById(accountsNew, id1User1).getBalance() + amount, MONEY_ASSERT_DELTA);
-        assertEquals(TestUtils.findAccountById(accountsOld, id2User1).getBalance(),
-                TestUtils.findAccountById(accountsNew, id2User1).getBalance() - amount, MONEY_ASSERT_DELTA);
+
+        softly.assertThat(TestUtils.findAccountById(accountsOld, id1User1).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNew, id1User1).getBalance() + amount, offset(MONEY_ASSERT_DELTA));
+        softly.assertThat(TestUtils.findAccountById(accountsOld, id2User1).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNew, id2User1).getBalance() - amount, offset(MONEY_ASSERT_DELTA));
     }
 
     @Test
@@ -201,10 +205,11 @@ public class TransferringFundsTest {
                 .execute()
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
-        assertEquals(TestUtils.findAccountById(accountsOldUser1, id1User1).getBalance(),
-                TestUtils.findAccountById(accountsNewUser1, id1User1).getBalance() + TRANSFER_AMOUNT, MONEY_ASSERT_DELTA);
-        assertEquals(TestUtils.findAccountById(accountsOldUser2, id1User2).getBalance(),
-                TestUtils.findAccountById(accountsNewUser2, id1User2).getBalance() - TRANSFER_AMOUNT, MONEY_ASSERT_DELTA);
+
+        softly.assertThat(TestUtils.findAccountById(accountsOldUser1, id1User1).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNewUser1, id1User1).getBalance() + TRANSFER_AMOUNT, offset(MONEY_ASSERT_DELTA));
+        softly.assertThat(TestUtils.findAccountById(accountsOldUser2, id1User2).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNewUser2, id1User2).getBalance() - TRANSFER_AMOUNT, offset(MONEY_ASSERT_DELTA));
     }
 
     @Test
@@ -230,12 +235,21 @@ public class TransferringFundsTest {
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
 
-        assertEquals(TestUtils.findAccountById(accountsOldUser1, id1User1).getBalance(),
-                TestUtils.findAccountById(accountsNewUser1, id1User1).getBalance(), MONEY_ASSERT_DELTA);
+        softly.assertThat(TestUtils.findAccountById(accountsOldUser1, id1User1).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNewUser1, id1User1).getBalance(), offset(MONEY_ASSERT_DELTA));
     }
 
     @Test
     public void userCannotTransferFundsIfBalanceIsInsufficient() {
+        //create and get id acc 2 user 1
+        UserCreateAccountResponse response3User1 = new UserCreateAccountRequester(
+                RequestSpecs.userAuthSpec(userAuthHeader1),
+                ResponseSpecs.returnsCreated())
+                .execute()
+                .extract()
+                .as(UserCreateAccountResponse.class);
+        id3User1 = response3User1.getId();
+
         CustomerAccountsGetResponse[] accountsOld = new CustomerAccountsGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.returnsOK())
@@ -243,7 +257,7 @@ public class TransferringFundsTest {
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
         TransferFundsRequest transferFundsRequest = TransferFundsRequest.builder()
-                .senderAccountId(id2User1).receiverAccountId(id1User1).amount(MAX_TRANSFER).build();
+                .senderAccountId(id3User1).receiverAccountId(id1User1).amount(TRANSFER_AMOUNT).build();
         new TransferFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1)
                 , ResponseSpecs.invalidTransfer())
                 .execute(transferFundsRequest);
@@ -253,10 +267,10 @@ public class TransferringFundsTest {
                 .execute()
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
-        assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance(),
-                TestUtils.findAccountById(accountsNew, id1User1).getBalance(), MONEY_ASSERT_DELTA);
-        assertEquals(TestUtils.findAccountById(accountsOld, id2User1).getBalance(),
-                TestUtils.findAccountById(accountsNew, id2User1).getBalance(), MONEY_ASSERT_DELTA);
+        softly.assertThat(TestUtils.findAccountById(accountsOld, id1User1).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNew, id1User1).getBalance(), offset(MONEY_ASSERT_DELTA));
+        softly.assertThat(TestUtils.findAccountById(accountsOld, id3User1).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNew, id3User1).getBalance(), offset(MONEY_ASSERT_DELTA));
     }
 
     @ParameterizedTest
@@ -288,9 +302,9 @@ public class TransferringFundsTest {
                 .execute()
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
-        assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance(),
-                TestUtils.findAccountById(accountsNew, id1User1).getBalance(), MONEY_ASSERT_DELTA);
-        assertEquals(TestUtils.findAccountById(accountsOld, id2User1).getBalance(),
-                TestUtils.findAccountById(accountsNew, id2User1).getBalance(), MONEY_ASSERT_DELTA);
+        softly.assertThat(TestUtils.findAccountById(accountsOld, id1User1).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNew, id1User1).getBalance(), offset(MONEY_ASSERT_DELTA));
+        softly.assertThat(TestUtils.findAccountById(accountsOld, id2User1).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNew, id2User1).getBalance(), offset(MONEY_ASSERT_DELTA));
     }
 }

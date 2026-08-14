@@ -14,9 +14,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import iteration2_middle.specs.RequestSpecs;
 import iteration2_middle.specs.ResponseSpecs;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-public class ChangingTheNameTest {
+public class ChangingTheNameTest extends BaseApiTest {
     private static String userAuthHeader;
     private static final String validName = RandomData.getRandomValidName();
 
@@ -60,14 +58,15 @@ public class ChangingTheNameTest {
                 ResponseSpecs.profileUpdatedSuccessfully())
                 .execute(customerProfileUpdateRequest)
                 .extract().as(CustomerProfileUpdateResponse.class);
-        assertEquals(validName, customerProfileUpdateResponse.getCustomer().getName());
+        softly.assertThat(validName).isEqualTo(customerProfileUpdateResponse.getCustomer().getName());
+
 
         CustomerProfileGetResponse customerProfileGetResponse = new CustomerProfileGetRequester(
                 RequestSpecs.userAuthSpec(userAuthHeader),
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract().as(CustomerProfileGetResponse.class);
-        assertEquals(validName, customerProfileGetResponse.getName());
+        softly.assertThat(validName).isEqualTo(customerProfileGetResponse.getName());
     }
 
     @ParameterizedTest
@@ -92,7 +91,7 @@ public class ChangingTheNameTest {
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract().as(CustomerProfileGetResponse.class);
-        assertEquals(customerProfileGetResponseOld.getName(), customerProfileGetResponseNew.getName());
+        softly.assertThat(customerProfileGetResponseOld.getName()).isEqualTo(customerProfileGetResponseNew.getName());
     }
 
     @Test
@@ -114,6 +113,6 @@ public class ChangingTheNameTest {
                 ResponseSpecs.returnsOK())
                 .execute()
                 .extract().as(CustomerProfileGetResponse.class);
-        assertEquals(customerProfileGetResponseOld.getName(), customerProfileGetResponseNew.getName());
+        softly.assertThat(customerProfileGetResponseOld.getName()).isEqualTo(customerProfileGetResponseNew.getName());
     }
 }

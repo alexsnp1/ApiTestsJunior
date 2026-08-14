@@ -19,9 +19,9 @@ import iteration2_middle.utils.TestUtils;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.offset;
 
-public class DepositingFundsTest {
+public class DepositingFundsTest extends BaseApiTest {
     private static String userAuthHeader1;
     private static String userAuthHeader2;
     private static int id1User1;
@@ -127,8 +127,8 @@ public class DepositingFundsTest {
                 .execute()
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
-        assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance() + balance,
-                TestUtils.findAccountById(accountsNew, id1User1).getBalance(), MONEY_ASSERT_DELTA);
+        softly.assertThat(TestUtils.findAccountById(accountsOld, id1User1).getBalance() + balance)
+                .isEqualTo(TestUtils.findAccountById(accountsNew, id1User1).getBalance());
     }
 
     @ParameterizedTest
@@ -158,8 +158,8 @@ public class DepositingFundsTest {
                 .execute()
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
-        assertEquals(TestUtils.findAccountById(accountsOld, id1User1).getBalance(),
-                TestUtils.findAccountById(accountsNew, id1User1).getBalance(), MONEY_ASSERT_DELTA);
+        softly.assertThat(TestUtils.findAccountById(accountsOld, id1User1).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNew, id1User1).getBalance(), offset(MONEY_ASSERT_DELTA));
     }
 
     @Test
@@ -181,8 +181,8 @@ public class DepositingFundsTest {
                 .execute()
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
-        assertEquals(TestUtils.findAccountById(accountsOld, id1User2).getBalance(),
-                TestUtils.findAccountById(accountsNew, id1User2).getBalance(), MONEY_ASSERT_DELTA);
+        softly.assertThat(TestUtils.findAccountById(accountsOld, id1User2).getBalance())
+                .isEqualTo(TestUtils.findAccountById(accountsNew, id1User2).getBalance(), offset(MONEY_ASSERT_DELTA));
 
     }
 
