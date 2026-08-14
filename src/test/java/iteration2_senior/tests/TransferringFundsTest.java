@@ -21,7 +21,6 @@ import iteration2_senior.utils.TestUtils;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.offset;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TransferringFundsTest extends BaseApiTest {
     private static String authTokenUser1;
@@ -101,10 +100,6 @@ public class TransferringFundsTest extends BaseApiTest {
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser1);
         CustomerAccountsGetResponse[] accountsNewUser2 =
                 CustomerAccountStep.getCustomerAccountResponse(authTokenUser2);
-        assertEquals(TestUtils.findAccountById(accountsOldUser1, user1Id1).getBalance(),
-                TestUtils.findAccountById(accountsNewUser1, user1Id1).getBalance() + TRANSFER_AMOUNT, MONEY_ASSERT_DELTA);
-        assertEquals(TestUtils.findAccountById(accountsOldUser2, user2Id1).getBalance(),
-                TestUtils.findAccountById(accountsNewUser2, user2Id1).getBalance() - TRANSFER_AMOUNT, MONEY_ASSERT_DELTA);
 
         softly.assertThat(TestUtils.findAccountById(accountsOldUser1, user1Id1).getBalance())
                 .isEqualTo(TestUtils.findAccountById(accountsNewUser1, user1Id1).getBalance() + TRANSFER_AMOUNT, offset(MONEY_ASSERT_DELTA));
