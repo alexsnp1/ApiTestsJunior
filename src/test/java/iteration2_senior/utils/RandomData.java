@@ -1,11 +1,13 @@
 package iteration2_senior.utils;
 
-import org.apache.commons.lang3.RandomStringUtils;
-
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomData {
     private RandomData() {
+    }
+    public static double getRandomDepositAmount() {
+        return Math.round(
+                ThreadLocalRandom.current().nextDouble(0.01, 5000.01) * 100) / 100.0;
     }
 
     public static double getRandomTransferAmount() {

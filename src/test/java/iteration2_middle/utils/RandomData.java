@@ -21,6 +21,11 @@ public class RandomData {
                 + "#";
     }
 
+    public static double getRandomDepositAmount() {
+        return Math.round(
+                ThreadLocalRandom.current().nextDouble(0.01, 5000.01) * 100) / 100.0;
+    }
+
     public static double getRandomTransferAmount() {
         return Math.round(
                 ThreadLocalRandom.current().nextDouble(0.01, 10000.01) * 100) / 100.0;

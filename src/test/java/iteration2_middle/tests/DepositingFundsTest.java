@@ -27,7 +27,7 @@ public class DepositingFundsTest extends BaseApiTest {
     private static int id1User1;
     private static int id1User2;
     private static final double MONEY_ASSERT_DELTA = 0.01;
-    private static final double TRANSFER_AMOUNT = RandomData.getRandomTransferAmount();
+    private static final double DEPOSIT_AMOUNT = RandomData.getRandomDepositAmount();
     private static final int NON_EXISTENT_ACCOUNT_ID = RandomData.getRandomNonExistentId();
 
     @BeforeAll
@@ -171,7 +171,7 @@ public class DepositingFundsTest extends BaseApiTest {
                 .extract()
                 .as(CustomerAccountsGetResponse[].class);
         DepositFundsRequest depositFundsRequest = DepositFundsRequest.builder()
-                .id(id1User2).balance(TRANSFER_AMOUNT).build();
+                .id(id1User2).balance(DEPOSIT_AMOUNT).build();
         new DepositFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.unauthorizedAccountAccess())
                 .execute(depositFundsRequest);
@@ -189,7 +189,7 @@ public class DepositingFundsTest extends BaseApiTest {
     @Test
     public void userCannotDepositFundsToNonExistentAccount() {
         DepositFundsRequest depositFundsRequest = DepositFundsRequest.builder()
-                .id(NON_EXISTENT_ACCOUNT_ID).balance(TRANSFER_AMOUNT).build();
+                .id(NON_EXISTENT_ACCOUNT_ID).balance(DEPOSIT_AMOUNT).build();
         new DepositFundsRequester(RequestSpecs.userAuthSpec(userAuthHeader1),
                 ResponseSpecs.unauthorizedAccountAccess())
                 .execute(depositFundsRequest);
